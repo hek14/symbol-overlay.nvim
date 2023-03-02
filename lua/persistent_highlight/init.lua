@@ -2,7 +2,10 @@ local util = require('core.utils') -- TODO: remove this when publish
 local M = {}
 local changed_ticks = {}
 local persistent_marks = {}
+local child_thread = {}
 local t = {}
+local clear_by_autocmd = {}
+local group = vim.api.nvim_create_augroup('persistent_highlight',{clear=true})
 t.__index = function(self,k)
   if type(k) == 'number' then
     return rawget(self,tostring(k))
@@ -202,14 +205,15 @@ local function del_marks(bufnr,ns)
 end
 
 function M.debug()
-  p("persistent_marks: ",persistent_marks)
   local bufnr = vim.api.nvim_get_current_buf()
   local marks = persistent_marks[bufnr]
   local ranges = marks2ranges(marks,bufnr)
+  p("persistent_marks: ",persistent_marks)
   p('ranges: ',ranges)
 end
 
 function M.highlight()
+  M.clear()
   local bufnr = vim.api.nvim_get_current_buf()
   changed_ticks[bufnr] = vim.b.changedtick
   local highlight_params = vim.tbl_deep_extend("force",vim.lsp.util.make_position_params(),{offset_encoding=hl_offset_encoding})
@@ -232,6 +236,66 @@ end
 
 function M.clear()
   local bufnr = vim.api.nvim_get_current_buf()
+  if (not persistent_marks[bufnr]) or (#persistent_marks[bufnr]==0) then
+    return
+  end
+  local position = vim.api.nvim_win_get_cursor(vim.api.nvim_get_current_win())
+  local make_range = {
+    ['start'] = {line=position[1]-1,character=position[2]},
+    ['end']   = {line=position[1]-1,character=position[2]+1}
+  }
+  local ranges = marks2ranges(persistent_marks[bufnr],bufnr)
+
+  local cb = uv.new_async(vim.schedule_wrap(function()
+    table.sort(ranges, r1_smaller_than_r2)
+    local found_ns = hit_ns(ranges,make_range)
+    if found_ns then
+      vim.api.nvim_buf_clear_namespace(bufnr,found_ns,0,-1)
+      del_marks(bufnr,found_ns)
+    end
+  end))
+
+  if child_thread[bufnr] then
+    uv.thread_join(child_thread[bufnr])
+  end
+  child_thread[bufnr] = uv.new_thread(function(asy)
+    asy:send()
+  end,cb)
+end
+
+function M.clear_all()
+  local bufnr = vim.api.nvim_get_current_buf()
+  if (not persistent_marks[bufnr]) or (#persistent_marks[bufnr]==0) then
+    return
+  end
+  local cb = uv.new_async(vim.schedule_wrap(function()
+    local all_ns = {}
+    for i,m in ipairs(persistent_marks[bufnr]) do
+      if not vim.tbl_contains(all_ns,m.ns) then
+        table.insert(all_ns,m.ns)
+      end
+    end
+    for _,ns in ipairs(all_ns) do
+      vim.api.nvim_buf_clear_namespace(bufnr,ns,0,-1)
+    end
+    persistent_marks[bufnr] = {}
+  end))
+
+  if child_thread[bufnr] then
+    uv.thread_join(child_thread[bufnr])
+  end
+  child_thread[bufnr] = uv.new_thread(function(asy)
+    asy:send()
+  end,cb)
+end
+
+function M.toggle()
+  local bufnr = vim.api.nvim_get_current_buf()
+  if (not persistent_marks[bufnr]) or (#persistent_marks[bufnr]==0) then
+    M.highlight()
+    return
+  end
+
   local position = vim.api.nvim_win_get_cursor(vim.api.nvim_get_current_win())
   local make_range = {
     ['start'] = {line=position[1]-1,character=position[2]},
@@ -243,14 +307,56 @@ function M.clear()
   if found_ns then
     vim.api.nvim_buf_clear_namespace(bufnr,found_ns,0,-1)
     del_marks(bufnr,found_ns)
+  else
+    M.highlight()
   end
 end
 
-function M.next_highlight(direction)
+local function goto_range(r)
+  local start = r.start
+  vim.cmd("normal! m'")
+  vim.api.nvim_win_set_cursor(0,{start.line+1,start.character})
+  vim.cmd("normal! zv")
 end
 
-function M.on_attach(bufnr)
-  local group = vim.api.nvim_create_augroup('persistent_highlight',{clear=true})
+function M.next_highlight(direction)
+  local bufnr = vim.api.nvim_get_current_buf()
+  if (not persistent_marks[bufnr]) or (#persistent_marks[bufnr]==0) then
+    print('nothing todo')
+    return
+  end
+  local position = vim.api.nvim_win_get_cursor(vim.api.nvim_get_current_win())
+  local make_range = {
+    ['start'] = {line=position[1]-1,character=position[2]},
+    ['end']   = {line=position[1]-1,character=position[2]+1}
+  }
+  local ranges = marks2ranges(persistent_marks[bufnr],bufnr)
+  local to_insert = search(ranges,make_range)
+  if to_insert==1 then
+    if direction==1 then
+      goto_range(ranges[1])
+    else
+      goto_range(ranges[#ranges])
+    end
+  else
+    if direction==1 then
+      if to_insert > #ranges then
+        goto_range(ranges[1])
+      else
+        goto_range(ranges[to_insert])
+      end
+    else
+      if point_in_range(make_range['start'],ranges[to_insert-1]) then
+        if to_insert > 2 then
+          goto_range(ranges[to_insert-2])
+        else
+          goto_range(ranges[#ranges])
+        end
+      else
+        goto_range(ranges[to_insert-1])
+      end
+    end
+  end
 end
 
 return M
