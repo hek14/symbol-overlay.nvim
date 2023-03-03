@@ -5,7 +5,7 @@ local persistent_marks = {}
 local child_thread = {}
 local t = {}
 local clear_by_autocmd = {}
-local group = vim.api.nvim_create_augroup('persistent_highlight',{clear=true})
+local group = vim.api.nvim_create_augroup('symbol-overlay',{clear=true})
 t.__index = function(self,k)
   if type(k) == 'number' then
     return rawget(self,tostring(k))
@@ -24,7 +24,7 @@ setmetatable(persistent_marks,t)
 
 local color_index = 1
 local hl_offset_encoding = "utf-16"
-local colors = require('persistent_highlight.colors')
+local colors = require('symbol-overlay.colors')
 local uv = vim.loop
 local protocol = require('vim.lsp.protocol')
 local fmt = string.format
