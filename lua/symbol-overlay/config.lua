@@ -13,19 +13,6 @@ local defaults = {
   colors = require('symbol-overlay.colors').colors,
 }
 
-local function echo(hlgroup, msg)
-  vim.cmd(fmt('echohl %s', hlgroup))
-  vim.cmd(fmt('echo "[symbol-overlay] %s"', msg))
-  vim.cmd('echohl None')
-end
-
-local function error(msg)
-  echo('DiagnosticError', msg)
-end
-
-local function warn(msg)
-  echo('DiagnosticWarn', msg)
-end
 
 function M.set(opt)
   options = vim.tbl_extend('force',defaults,opt and opt or {})
@@ -34,7 +21,6 @@ function M.set(opt)
   end
   if #options.colors==0 then
     options.colors = require('symbol-overlay.colors').colors
-    error('define custom colors like: {colors = {"#C70039","#b16286"}}')
   end
   options.hl_groups = require('symbol-overlay.colors').get_hl_group(options.colors)
 end

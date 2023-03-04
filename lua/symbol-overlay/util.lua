@@ -1,3 +1,35 @@
+local function echo(hlgroup, msg)
+  vim.cmd(fmt('echohl %s', hlgroup))
+  vim.cmd(fmt('echo "[symbol-overlay] %s"', msg))
+  vim.cmd('echohl None')
+end
+
+local function error(msg)
+  echo('DiagnosticError', msg)
+end
+
+local function warn(msg)
+  echo('DiagnosticWarn', msg)
+end
+
+local detect_lsp = function(bufnr)
+  local clients = vim.lsp.get_active_clients({bufnr=bufnr})
+  if #clients == 0 then
+    error('No active lsp clients')
+    return
+  end
+  local found_client
+  for _,client in ipairs(clients) do
+    if client.supports_method('textDocument/documentHighlight') then
+      found_client = client.name
+      break
+    end
+  end
+  if not found_client then
+    error('no client supports textDocument/documentHighlight')
+  end
+end
+
 local function r1_smaller_than_r2(r1, r2)
   if r1['start'].line < r2['start'].line then return true end
   if r2['start'].line < r1['start'].line then return false end
@@ -91,6 +123,8 @@ local hit_ns = function(ranges,position)
 end
 
 return {
+  warn = warn,
+  error = error,
   search = search,
   hit_ns = hit_ns,
   r1_smaller_than_r2 = r1_smaller_than_r2,

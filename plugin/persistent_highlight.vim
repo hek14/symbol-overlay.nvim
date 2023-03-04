@@ -1,1 +1,0 @@
-" echo "persistent highlight loaded"
