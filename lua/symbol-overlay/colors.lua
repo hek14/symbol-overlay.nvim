@@ -21,8 +21,10 @@ function M.get_hl_group(colors)
   end
   local groups = {}
   for i, color in ipairs(colors) do
-    vim.cmd (string.format('highlight! def persistent_highlight_%s_write gui=italic guibg=%s guifg=white',i,color))
-    vim.cmd (string.format('highlight! def persistent_highlight_%s_read guibg=%s guifg=white',i,color))
+    vim.defer_fn(function()
+      vim.cmd (string.format('highlight def persistent_highlight_%s_write gui=italic guibg=%s guifg=white',i,color))
+      vim.cmd (string.format('highlight def persistent_highlight_%s_read guibg=%s guifg=white',i,color))
+    end,0)
     table.insert(groups,{
       read=string.format('persistent_highlight_%s_read',i),
       write=string.format('persistent_highlight_%s_write',i)

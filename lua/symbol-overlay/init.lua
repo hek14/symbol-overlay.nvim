@@ -212,7 +212,7 @@ function M.toggle()
   local ranges = marks2ranges(persistent_marks[bufnr],bufnr,true)
   local res = hit_ns(ranges,position)
   if res[1] == 'in' then
-    local found_ns = res[2]['ns']
+    local found_ns = ranges[res.search]['ns']
     clear_ns(bufnr,found_ns)
   else
     new_highlight(bufnr)
