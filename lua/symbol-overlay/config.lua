@@ -8,7 +8,9 @@ local defaults = {
     toggle = '<C-t>t',
     clear_all = '<C-t>c',
     next_highlight = '<C-t>n',
-    prev_highlight = '<C-t>p'
+    prev_highlight = '<C-t>p',
+    gen = '<C-t>g',
+    list = '<C-t>l',
   },
   colors = require('symbol-overlay.colors').colors,
 }
@@ -17,7 +19,11 @@ local defaults = {
 function M.set(opt)
   options = vim.tbl_extend('force',defaults,opt and opt or {})
   for k,v in pairs(options.keymap) do
-    vim.keymap.set('n',v,overlay[k],{silent=true})
+    if overlay[k] then
+      vim.keymap.set('n',v,overlay[k],{silent=true})
+    else
+      vim.keymap.set('n',v,fmt('<Cmd>Telescope symbol_overlay %s<CR>',k),{silent=true})
+    end
   end
   if #options.colors==0 then
     options.colors = require('symbol-overlay.colors').colors

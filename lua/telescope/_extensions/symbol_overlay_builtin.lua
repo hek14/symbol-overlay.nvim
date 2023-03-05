@@ -89,7 +89,7 @@ M.list = function(opts)
   }):find()
 end
 
-M.fastgen = function(opts)
+M.gen = function(opts)
   local params = vim.lsp.util.make_position_params(opts.winnr or 0)
   vim.lsp.buf_request(opts.bufnr, "textDocument/documentSymbol", params, function(err, result, ctx, _)
     if err then
