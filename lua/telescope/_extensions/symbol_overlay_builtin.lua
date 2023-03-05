@@ -27,8 +27,8 @@ local function get_symbol_overlay(bufnr)
     if r.start.line == r['end'].line then
       local line = vim.api.nvim_buf_get_lines(bufnr, r.start.line, r.start.line + 1, false)[1]
       ranges[i].text = string.sub(line,r.start.character+1,r['end'].character)
-      ranges[i].line = string.gsub(line,' ','')
-      ranges[i].kind = lsp_num_to_str[r.kind] -- defined in core.utils
+      ranges[i].line = line:gsub('^ +',''):gsub(' +$','')
+      ranges[i].kind = lsp_num_to_str[r.kind]
       ranges[i].bufnr = bufnr
       ranges[i].path = vim.api.nvim_buf_get_name(bufnr)
       ranges[i].lnum = r.start.line + 1
@@ -89,7 +89,78 @@ M.list = function(opts)
   }):find()
 end
 
-M.choose = function ()
+M.fastgen = function(opts)
+  local params = vim.lsp.util.make_position_params(opts.winnr or 0)
+  vim.lsp.buf_request(opts.bufnr, "textDocument/documentSymbol", params, function(err, result, ctx, _)
+    if err then
+      vim.api.nvim_err_writeln("Error when finding document symbols: " .. err.message)
+      return
+    end
+
+    if not result or vim.tbl_isempty(result) then
+      utils.notify("builtin.lsp_document_symbols", {
+        msg = "No results from textDocument/documentSymbol",
+        level = "INFO",
+      })
+      return
+    end
+
+    local locations = vim.lsp.util.symbols_to_items(result or {}, opts.bufnr) or {}
+    locations = utils.filter_symbols(locations, opts)
+    print('ctx.bufnr',ctx.bufnr)
+    for i,loc in ipairs(locations) do
+      locations[i].bufnr = ctx.bufnr
+    end
+    if locations == nil then
+      return
+    end
+
+    if vim.tbl_isempty(locations) then
+      utils.notify("builtin.lsp_document_symbols", {
+        msg = "No document_symbol locations found",
+        level = "INFO",
+      })
+      return
+    end
+
+    opts.path_display = { "hidden" }
+    pickers
+    .new(opts, {
+      prompt_title = "LSP Document Symbols",
+      finder = finders.new_table {
+        results = locations,
+        entry_maker = opts.entry_maker or require"telescope.make_entry".gen_from_lsp_symbols(opts),
+      },
+      previewer = conf.qflist_previewer(opts),
+      sorter = conf.prefilter_sorter {
+        tag = "symbol_type",
+        sorter = conf.generic_sorter(opts),
+      },
+      push_cursor_on_edit = true,
+      push_tagstack_on_edit = true,
+      attach_mappings = function(prompt_bufnr)
+        actions.select_default:replace(function ()
+          local picker = actions_state.get_current_picker(prompt_bufnr)
+          local num_selections = #picker:get_multi_selection()
+          if num_selections <= 1 then
+            local entry = actions_state.get_selected_entry()
+            vim.defer_fn(function ()
+              require('symbol-overlay').toggle(entry.value.bufnr,{entry.value.lnum,entry.value.col-1})
+            end,0)
+          else
+            for i, entry in ipairs(picker:get_multi_selection()) do
+              vim.defer_fn(function ()
+                require('symbol-overlay').toggle(entry.value.bufnr,{entry.value.lnum,entry.value.col-1})
+              end,0)
+            end
+          end
+          actions.close(prompt_bufnr)
+        end)
+        return true
+      end
+    })
+    :find()
+  end)
 end
 
 return M

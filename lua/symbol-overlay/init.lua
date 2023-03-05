@@ -149,9 +149,15 @@ function M.debug()
   vim.pretty_print('ranges: ',ranges)
 end
 
-local new_highlight = function(bufnr)
+local new_highlight = function(bufnr,position)
   changed_ticks[bufnr] = vim.b.changedtick
   local highlight_params = vim.tbl_deep_extend("force",vim.lsp.util.make_position_params(),{offset_encoding=hl_offset_encoding})
+  if position then
+    highlight_params.position = {
+      line = position[1] - 1,
+      character = position[2],
+    }
+  end
   if persistent_marks[bufnr] == nil then
     persistent_marks[bufnr] = {}
   end
@@ -205,21 +211,23 @@ function M.clear_all()
   end,cb)
 end
 
-function M.toggle()
-  local bufnr = vim.api.nvim_get_current_buf()
+function M.toggle(bufnr,position)
+  if not (bufnr and bufnr~=0) then
+    bufnr = vim.api.nvim_get_current_buf()
+  end
+  position = position or vim.api.nvim_win_get_cursor(vim.api.nvim_get_current_win())
   if (not persistent_marks[bufnr]) or (#persistent_marks[bufnr]==0) then
-    new_highlight(bufnr)
+    new_highlight(bufnr,position)
     return
   end
 
-  local position = vim.api.nvim_win_get_cursor(vim.api.nvim_get_current_win())
   local ranges = marks2ranges(persistent_marks[bufnr],bufnr,true)
   local res = hit_ns(ranges,position)
   if res[1] == 'in' then
     local found_ns = ranges[res.search]['ns']
     clear_ns(bufnr,found_ns)
   else
-    new_highlight(bufnr)
+    new_highlight(bufnr,position)
   end
 end
 
