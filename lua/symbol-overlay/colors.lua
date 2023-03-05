@@ -1,11 +1,16 @@
 local default_colors = {
+  "#1F6C4A",
+  "#C70039",
+  '#0000ff',
+  '#7fbbb3',
   '#e67e80',
+  '#aeee00',
+  '#ff0000',
+  "#458588",
   '#e69875',
   '#dbbc7f',
   '#a7c080',
   '#83c092',
-  '#7fbbb3',
-  '#d699b6',
   '#859289',
   '#9da9a0',
   '#a7c080',
@@ -13,13 +18,7 @@ local default_colors = {
   '#e67e80',
   '#7a8478',
   "#b16286",
-  "#1F6C4A",
-  "#458588",
-  '#aeee00',
-  '#ff0000',
-  '#0000ff',
   '#ff2c4b',
-  "#C70039",
 }
 -- ========== state end
 local M = {colors=default_colors}

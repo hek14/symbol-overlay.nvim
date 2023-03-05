@@ -240,6 +240,9 @@ end
 function M.next_highlight()
   local position = vim.api.nvim_win_get_cursor(vim.api.nvim_get_current_win())
   local bufnr = vim.api.nvim_get_current_buf()
+  if (not persistent_marks[bufnr]) or (#persistent_marks[bufnr]==0) then
+    return
+  end
   local ranges = marks2ranges(persistent_marks[bufnr],bufnr,true)
   local res = hit_ns(ranges,position)
   if res[1] == 'after_all' or res[1] == 'before_all' then
@@ -259,6 +262,9 @@ end
 function M.prev_highlight()
   local position = vim.api.nvim_win_get_cursor(vim.api.nvim_get_current_win())
   local bufnr = vim.api.nvim_get_current_buf()
+  if (not persistent_marks[bufnr]) or (#persistent_marks[bufnr]==0) then
+    return
+  end
   local ranges = marks2ranges(persistent_marks[bufnr],bufnr,true)
   local res = hit_ns(ranges,position)
   if res[1] == 'after_all' or res[1] == 'before_all' then

@@ -42,14 +42,14 @@ local function entry_maker_symbol_overlay(opts)
   local displayer = entry_display.create{
     separator = ' ',
     items = {
-      {width = 30, right_justify = false},
+      {width = 25, right_justify = false},
       {remaining = true},
     },
   }
   local function make_display(entry)
     return displayer{
-      {('%s: %s'):format(entry.kind,entry.value), entry.hl_group},
-      {('%s'):format(entry.line), entry.hl_group},
+      {('%s: %s'):format(entry.kind,entry.value), "Normal"},
+      {('%s'):format(entry.line), "Normal"},
     }
   end
 
