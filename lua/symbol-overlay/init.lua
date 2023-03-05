@@ -41,7 +41,7 @@ local hit_ns = util.hit_ns
 local function highlight_range(bufnr, ns, higroup, start, finish)
   local regtype = 'v'
   local inclusive = false
-  local priority = 202
+  local priority = 200
 
   -- sanity check
   if start[2] < 0 or finish[1] < start[1] then
@@ -77,7 +77,7 @@ local ranges2marks = function(ranges,bufnr,hl_groups,ns)
     r['end'][1] = r['end'].line
     r['end'][2] = r['end'].character
     local mark = highlight_range(bufnr,ns,hl_groups[i],r['start'],r['end'])
-    table.insert(marks,{mark=mark,ns=ns})
+    table.insert(marks,{mark=mark,ns=ns,kind=r.kind,hl_group=hl_groups[i]})
   end
   return marks
 end
@@ -90,7 +90,7 @@ local marks2ranges = function(marks,bufnr,sorted)
     local loc = vim.api.nvim_buf_get_extmark_by_id(bufnr,ns,mark,{details=true})
     local _start = {line = loc[1], character = loc[2]}
     local _end = {line = loc[3].end_row, character = loc[3].end_col}
-    table.insert(ranges,{start=_start,['end']=_end,ns=ns})
+    table.insert(ranges,{start=_start,['end']=_end,ns=ns,kind=m.kind,hl_group=m.hl_group})
   end
   if sorted then
     table.sort(ranges, r1_smaller_than_r2)
@@ -98,9 +98,12 @@ local marks2ranges = function(marks,bufnr,sorted)
   return ranges
 end
 
+M.marks2ranges = marks2ranges --TODO: move to util.lua
+
 local extract_ranges = function(result)
   local ranges = {}
   for _,res in ipairs(result) do
+    res.range.kind = res.kind
     table.insert(ranges,res.range)
   end
   return ranges
@@ -319,6 +322,10 @@ vim.api.nvim_create_autocmd({'TextChanged','TextChangedI'},{
   group = group,
   desc = "keep the validity of marks: all marks of a specific ns should be all the same"
 })
+
+function M._get_persistent_marks()
+  return persistent_marks 
+end
 
 function M.setup(opts)
   require('symbol-overlay.config').set(opts)

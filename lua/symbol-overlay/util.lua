@@ -1,3 +1,4 @@
+local fmt = string.format
 local function echo(hlgroup, msg)
   vim.cmd(fmt('echohl %s', hlgroup))
   vim.cmd(fmt('echo "[symbol-overlay] %s"', msg))
@@ -110,17 +111,43 @@ local hit_ns = function(ranges,position)
       return {'after_all'}
     end
   end
-
   local prev = ranges[to_insert]
   local next = ranges[to_insert+1]
-
   if point_in_range(make_range.start,prev) then
     return {'in',search=to_insert}
   else
     return {'between',search=to_insert}
   end
-
 end
+
+local lsp_num_to_str = {
+  [1]  = "File",
+  [2]  = "Module",
+  [3]  = "Namespace",
+  [4]  = "Package",
+  [5]  = "Class",
+  [6]  = "Method",
+  [7]  = "Property",
+  [8]  = "Field",
+  [9]  = "Constructor",
+  [10] = "Enum",
+  [11] = "Interface",
+  [12] = "Function",
+  [13] = "Variable",
+  [14] = "Constant",
+  [15] = "String",
+  [16] = "Number",
+  [17] = "Boolean",
+  [18] = "Array",
+  [19] = "Object",
+  [20] = "Key",
+  [21] = "Null",
+  [22] = "EnumMember",
+  [23] = "Struct",
+  [24] = "Event",
+  [25] = "Operator",
+  [26] = "TypeParameter",
+}
 
 return {
   warn = warn,
@@ -128,4 +155,5 @@ return {
   search = search,
   hit_ns = hit_ns,
   r1_smaller_than_r2 = r1_smaller_than_r2,
+  lsp_num_to_str = lsp_num_to_str,
 }
