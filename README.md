@@ -4,6 +4,7 @@ It depends on the builtin [neovim-lspconfig](https://github.com/neovim/nvim-lspc
 
 # Usage
 This plugin only works in attached buffers by neovim-lspconfig and requires the server to support `textDocument/documentHighlight`
+![](./demo.png)
 
 ## Toggle highlight under cursor
 `:lua require('symbol-overlay').toggle()` or press `<C-t>t` by default.
@@ -18,6 +19,11 @@ For this to work, telescope.nvim is needed
 
 ## Clear all highlights
 `:lua require('symbol-overlay').clear_all()` or press `<C-t>c` by default.
+
+## goto next/prev highlight
+`:lua require('symbol-overlay').next_highlight()` / `:lua require('symbol-overlay').prev_highlight()`
+
+or press `<C-t>n`/ `<C-t>p` by default.
 
 # Install
 By [lazy.nvim](https://github.com/folke/lazy.nvim):
