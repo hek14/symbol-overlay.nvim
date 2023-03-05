@@ -304,22 +304,17 @@ local function check_validity()
     clear_ns(bufnr,ns)
   end
   print('profile: ',(vim.loop.hrtime()-start)/1000000)
-  if autocmd_exe_timer[bufnr] then
-    autocmd_exe_timer[bufnr]:stop()
-    autocmd_exe_timer[bufnr]:close()
-    autocmd_exe_timer[bufnr] = nil
-  end
 end
 
 vim.api.nvim_create_autocmd({'TextChanged','TextChangedI'},{
   callback = function ()
     local bufnr = vim.api.nvim_get_current_buf()
     if autocmd_exe_timer[bufnr] then
-      print('still running the last timer')
-    else
-      autocmd_exe_timer[bufnr] = vim.loop.new_timer()
-      autocmd_exe_timer[bufnr]:start(100,0,vim.schedule_wrap(check_validity))
+      autocmd_exe_timer[bufnr]:stop()
+      autocmd_exe_timer[bufnr]:close()
     end
+    autocmd_exe_timer[bufnr] = vim.loop.new_timer()
+    autocmd_exe_timer[bufnr]:start(0,0,vim.schedule_wrap(check_validity))
   end,
   group = group,
   desc = "keep the validity of marks: all marks of a specific ns should be all the same"
