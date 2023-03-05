@@ -5,7 +5,7 @@ local options = {}
 
 local defaults = {
   keymap = {
-    toggle = '<C-t>.',
+    toggle = '<C-t>t',
     clear_all = '<C-t>c',
     next_highlight = '<C-t>n',
     prev_highlight = '<C-t>p'

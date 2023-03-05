@@ -5,6 +5,7 @@ local child_thread = {}
 local t = {}
 local clear_by_autocmd = {}
 local group = vim.api.nvim_create_augroup('symbol-overlay',{clear=true})
+local autocmd_exe_timer = {}
 t.__index = function(self,k)
   if type(k) == 'number' then
     return rawget(self,tostring(k))
@@ -268,6 +269,61 @@ function M.prev_highlight()
     return
   end
 end
+
+local function check_validity()
+  local start = vim.loop.hrtime()
+  local bufnr = vim.api.nvim_get_current_buf()
+  if (not persistent_marks[bufnr]) or (#persistent_marks[bufnr]==0) then
+    return
+  end
+  local ranges = marks2ranges(persistent_marks[bufnr],bufnr)
+  local checked_range = {}
+  local changed_ns = {}
+  for _,r in ipairs(ranges) do
+    if vim.tbl_contains(changed_ns,r.ns) then
+      goto continue
+    end
+    if not checked_range[r.ns] then
+      checked_range[r.ns] = {
+        r['end']['line']-r['start']['line'],
+        r['end']['character']-r['start']['character'],
+      }
+    else
+      local relative_r = {
+        r['end']['line']-r['start']['line'],
+        r['end']['character']-r['start']['character'],
+      }
+      if not vim.deep_equal(relative_r,checked_range[r.ns]) then
+        table.insert(changed_ns,r.ns)
+      end
+    end
+    ::continue::
+  end
+  vim.pretty_print('need to clear_ns: ',changed_ns)
+  for _,ns in ipairs(changed_ns) do
+    clear_ns(bufnr,ns)
+  end
+  print('profile: ',(vim.loop.hrtime()-start)/1000000)
+  if autocmd_exe_timer[bufnr] then
+    autocmd_exe_timer[bufnr]:stop()
+    autocmd_exe_timer[bufnr]:close()
+    autocmd_exe_timer[bufnr] = nil
+  end
+end
+
+vim.api.nvim_create_autocmd({'TextChanged','TextChangedI'},{
+  callback = function ()
+    local bufnr = vim.api.nvim_get_current_buf()
+    if autocmd_exe_timer[bufnr] then
+      print('still running the last timer')
+    else
+      autocmd_exe_timer[bufnr] = vim.loop.new_timer()
+      autocmd_exe_timer[bufnr]:start(100,0,vim.schedule_wrap(check_validity))
+    end
+  end,
+  group = group,
+  desc = "keep the validity of marks: all marks of a specific ns should be all the same"
+})
 
 function M.setup(opts)
   require('symbol-overlay.config').set(opts)
