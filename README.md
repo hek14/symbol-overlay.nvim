@@ -1,9 +1,9 @@
 # Introduction
 This is a neovim plugin for highlighting symbols with overlays. 
-It depends on the builtin [neovim-lspconfig](https://github.com/neovim/nvim-lspconfig) and [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim)(optional).
+Highlights will be updated automatically along with edits.
+It depends on [neovim-lspconfig](https://github.com/neovim/nvim-lspconfig) and [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim)(optional).
 
 # Usage
-This plugin only works in attached buffers by neovim-lspconfig and requires the server to support `textDocument/documentHighlight`
 ![](./demo.png)
 
 ## Toggle highlight under cursor
@@ -70,4 +70,4 @@ require('symbol-overlay').setup({
 
 # TODO
 - add treesitter backend (maybe)
-- scope-limited search in batch mode
+- scope-limited search in batch mode, like `Telescope symbol_overlay gen @function ".*setup.*"`
