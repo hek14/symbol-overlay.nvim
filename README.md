@@ -68,6 +68,9 @@ require('symbol-overlay').setup({
   })
 ```
 
+# design
+Use namespaces for batch deletion/updating of a set of highlights.
+
 # TODO
 - add treesitter backend (maybe)
 - scope-limited search in batch mode, like `Telescope symbol_overlay gen @function ".*setup.*"`
